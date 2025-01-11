@@ -1,40 +1,31 @@
-import * as readline from 'readline';
+import type { State } from './state.js';
 
-/**
- * Cleans and splits input string into array of words
- * @param input - Raw input string from user
- * @returns Array of cleaned words
- */
 export function cleanInput(input: string): string[] {
     return input.trim().toLowerCase().split(/\s+/);
 }
 
-/**
- * Starts the REPL (Read-Eval-Print-Loop) interface
- */
-export function startREPL(): void {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        prompt: '> '
-    });
+export function startREPL(state: State): void {
+    state.rl.prompt();
 
-    rl.prompt();
-
-    rl.on('line', (input: string) => {
+    state.rl.on('line', (input: string) => {
         const words = cleanInput(input);
         
         if (words.length === 0) {
-            rl.prompt();
+            state.rl.prompt();
             return;
         }
 
-        console.log(`Your command was: ${words[0]}`);
-        rl.prompt();
+        const command = state.commands[words[0]];
+        if (command) {
+            command.callback(state);
+        } else {
+            console.log('Unknown command');
+        }
+        
+        state.rl.prompt();
     });
 
-    rl.on('close', () => {
-        console.log('Goodbye!');
-        process.exit(0);
+    state.rl.on('close', () => {
+        state.commands.exit.callback(state);
     });
 }
